@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { BookOpen, Calendar, Clock, MapPin, CheckCircle, AlertCircle } from 'lucide-react';
+import { BookOpen, Calendar, Clock, MapPin, AlertCircle } from 'lucide-react';
 import api from '../api/axiosConfig';
 
 interface MyBookingResponse {
@@ -16,20 +16,38 @@ export const MyBookingsPage: React.FC = () => {
   const [bookings, setBookings] = useState<MyBookingResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [cancellingId, setCancellingId] = useState<number | null>(null);
+
+  const fetchBookings = async () => {
+    try {
+      const response = await api.get('/bookings/my-bookings');
+      setBookings(response.data);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to fetch bookings');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchBookings = async () => {
-      try {
-        const response = await api.get('/bookings/my-bookings');
-        setBookings(response.data);
-      } catch (err: any) {
-        setError(err.response?.data?.message || 'Failed to fetch bookings');
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchBookings();
   }, []);
+
+  const handleCancel = async (bookingId: number) => {
+    if (!window.confirm('Are you sure you want to cancel this booking? If you have already paid, your refund will be processed.')) {
+      return;
+    }
+    
+    setCancellingId(bookingId);
+    try {
+      await api.post(`/bookings/${bookingId}/cancel`);
+      await fetchBookings(); // Refresh the list
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Failed to cancel booking');
+    } finally {
+      setCancellingId(null);
+    }
+  };
 
   if (loading) {
     return <div className="text-center py-20 text-gray-500">Loading bookings...</div>;
@@ -101,6 +119,16 @@ export const MyBookingsPage: React.FC = () => {
                     ₹{booking.fare}
                   </div>
                 </div>
+                
+                {(booking.status === 'CONFIRMED' || booking.status === 'HELD') && startDate > new Date() && (
+                  <button
+                    onClick={() => handleCancel(booking.bookingId)}
+                    disabled={cancellingId === booking.bookingId}
+                    className="w-full mt-4 py-2 px-4 border border-red-200 text-red-600 rounded-lg hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center font-medium"
+                  >
+                    {cancellingId === booking.bookingId ? 'Cancelling...' : 'Cancel Booking'}
+                  </button>
+                )}
               </div>
             </div>
           );
