@@ -1,7 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Calendar, Clock, AlertCircle } from 'lucide-react';
 import api from '../api/axiosConfig';
+
+interface Seat {
+  id: number;
+  seatNumber: string;
+  zoneId: number;
+  isActive: boolean;
+}
 
 export const ZoneViewPage: React.FC = () => {
   const { id } = useParams();
@@ -10,12 +17,14 @@ export const ZoneViewPage: React.FC = () => {
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
   
+  const [seats, setSeats] = useState<Seat[]>([]);
   const [availableSeats, setAvailableSeats] = useState<number[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // We know Quiet Zone has seats 1, 2, 3
-  const TOTAL_SEATS = [1, 2, 3];
+  useEffect(() => {
+    api.get(`/zones/${id}/seats`).then(res => setSeats(res.data)).catch(console.error);
+  }, [id]);
 
   const handleCheckAvailability = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -101,20 +110,20 @@ export const ZoneViewPage: React.FC = () => {
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
           <h3 className="text-xl font-bold mb-6">Select a Seat</h3>
           <div className="grid grid-cols-3 md:grid-cols-4 gap-4">
-            {TOTAL_SEATS.map(seat => {
-              const isAvailable = availableSeats.includes(seat);
+            {seats.map(seat => {
+              const isAvailable = availableSeats.includes(seat.id);
               return (
                 <button
-                  key={seat}
+                  key={seat.id}
                   disabled={!isAvailable}
-                  onClick={() => handleBookSeat(seat)}
+                  onClick={() => handleBookSeat(seat.id)}
                   className={`p-4 rounded-xl border-2 text-center transition ${
                     isAvailable 
                       ? 'border-green-500 hover:bg-green-50 text-green-700 cursor-pointer'
                       : 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed opacity-50'
                   }`}
                 >
-                  <span className="block text-2xl font-bold mb-1">{seat}</span>
+                  <span className="block text-2xl font-bold mb-1">{seat.seatNumber}</span>
                   <span className="text-xs uppercase font-semibold">{isAvailable ? 'Available' : 'Booked'}</span>
                 </button>
               );

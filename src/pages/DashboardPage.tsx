@@ -1,20 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Clock, MapPin, Users } from 'lucide-react';
+import api from '../api/axiosConfig';
 
-const ZONES = [
-  {
-    id: 1,
-    name: 'Quiet Zone',
-    description: 'Perfect for deep focus and silent studying.',
-    capacity: 3,
-    price: 20,
-    image: 'https://images.unsplash.com/photo-1568667256549-094345857637?auto=format&fit=crop&q=80&w=800'
-  }
-];
+interface Zone {
+  id: number;
+  name: string;
+  description: string;
+  capacity: number;
+  pricePerHour: number;
+  imageUrl: string;
+}
 
 export const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
+  const [zones, setZones] = useState<Zone[]>([]);
+
+  useEffect(() => {
+    api.get('/zones').then(res => setZones(res.data)).catch(console.error);
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -26,14 +30,14 @@ export const DashboardPage: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {ZONES.map((zone) => (
+        {zones.map((zone) => (
           <div key={zone.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition cursor-pointer" onClick={() => navigate(`/zone/${zone.id}`)}>
-            <img src={zone.image} alt={zone.name} className="w-full h-48 object-cover" />
+            <img src={zone.imageUrl} alt={zone.name} className="w-full h-48 object-cover" />
             <div className="p-6">
               <div className="flex justify-between items-start mb-4">
                 <h3 className="text-xl font-bold text-gray-900">{zone.name}</h3>
                 <span className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm font-semibold">
-                  ₹{zone.price}/hr
+                  ₹{zone.pricePerHour}/hr
                 </span>
               </div>
               <p className="text-gray-500 text-sm mb-6">{zone.description}</p>
