@@ -87,11 +87,13 @@ export const MyBookingsPage: React.FC = () => {
           const endDate = new Date(booking.endTime);
           
           return (
-            <div key={booking.bookingId} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <div key={`${booking.bookingId}-${booking.status}`} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
               <div className="p-6">
                 <div className="flex justify-between items-start mb-4">
                   <div>
-                    <h3 className="text-xl font-bold text-gray-900">Seat {booking.seatId}</h3>
+                    <h3 className="text-xl font-bold text-gray-900">
+                      {booking.seatId ? `Seat ${booking.seatId}` : 'Queue Position'}
+                    </h3>
                     <p className="text-gray-500 text-sm flex items-center mt-1">
                       <MapPin className="w-3 h-3 mr-1" />
                       Zone {booking.zoneId}
@@ -100,6 +102,7 @@ export const MyBookingsPage: React.FC = () => {
                   <span className={`px-3 py-1 rounded-full text-xs font-bold ${
                     booking.status === 'CONFIRMED' ? 'bg-green-100 text-green-800' : 
                     booking.status === 'HELD' ? 'bg-yellow-100 text-yellow-800' : 
+                    booking.status.startsWith('WAITLIST') ? 'bg-purple-100 text-purple-800' :
                     'bg-gray-100 text-gray-800'
                   }`}>
                     {booking.status}

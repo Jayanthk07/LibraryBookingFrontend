@@ -80,10 +80,38 @@ export const ZoneViewPage: React.FC = () => {
     }
   };
 
+  const handleJoinWaitlist = async () => {
+    try {
+      const startDateTime = new Date(`${date}T${startTime}:00`);
+      const endDateTime = new Date(`${date}T${endTime}:00`);
+
+      const response = await api.post('/waitlist/join', {
+        zoneId: Number(id),
+        startTime: startDateTime.toISOString(),
+        endTime: endDateTime.toISOString()
+      });
+
+      // Redirect to payment flow with the waitlistId
+      navigate(`/checkout/${response.data.waitlistId}`, { state: { amount: response.data.fare, isWaitlist: true } });
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Failed to join waitlist');
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-        <h2 className="text-2xl font-bold mb-4">Check Availability</h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-bold">Check Availability</h2>
+          {availableSeats !== null && availableSeats.length === 0 && (
+            <button 
+              onClick={handleJoinWaitlist}
+              className="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 transition"
+            >
+              Join Waitlist
+            </button>
+          )}
+        </div>
         <form onSubmit={handleCheckAvailability} className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
@@ -108,23 +136,25 @@ export const ZoneViewPage: React.FC = () => {
 
       {availableSeats !== null && (
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <h3 className="text-xl font-bold mb-6">Select a Seat</h3>
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-xl font-bold">Select a Seat</h3>
+          </div>
           <div className="grid grid-cols-3 md:grid-cols-4 gap-4">
             {seats.map(seat => {
               const isAvailable = availableSeats.includes(seat.id);
               return (
                 <button
                   key={seat.id}
-                  disabled={!isAvailable}
-                  onClick={() => handleBookSeat(seat.id)}
+                  onClick={() => isAvailable ? handleBookSeat(seat.id) : handleJoinWaitlist()}
                   className={`p-4 rounded-xl border-2 text-center transition ${
                     isAvailable 
                       ? 'border-green-500 hover:bg-green-50 text-green-700 cursor-pointer'
-                      : 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed opacity-50'
+                      : 'border-gray-200 bg-gray-50 text-gray-500 hover:border-purple-300 hover:bg-purple-50 cursor-pointer'
                   }`}
+                  title={isAvailable ? "Book Seat" : "Join Waitlist"}
                 >
                   <span className="block text-2xl font-bold mb-1">{seat.seatNumber}</span>
-                  <span className="text-xs uppercase font-semibold">{isAvailable ? 'Available' : 'Booked'}</span>
+                  <span className="text-xs uppercase font-semibold">{isAvailable ? 'Available' : 'Waitlist'}</span>
                 </button>
               );
             })}

@@ -12,6 +12,7 @@ export const CheckoutPage: React.FC = () => {
   const [success, setSuccess] = useState(false);
 
   // Fallback amount if not passed in state
+  const isWaitlist = location.state?.isWaitlist || false;
   const amount = location.state?.amount || 20.00;
 
   useEffect(() => {
@@ -31,9 +32,12 @@ export const CheckoutPage: React.FC = () => {
       setError('');
       
       // 1. Create order on backend
-      const response = await api.post('/payments/create-order', {
-        bookingId: Number(bookingId)
-      });
+      const endpoint = isWaitlist ? '/payments/create-waitlist-order' : '/payments/create-order';
+      const payload = isWaitlist 
+        ? { waitlistId: Number(bookingId) }
+        : { bookingId: Number(bookingId) };
+        
+      const response = await api.post(endpoint, payload);
       const orderData = response.data;
 
       // 2. Open Razorpay Checkout
